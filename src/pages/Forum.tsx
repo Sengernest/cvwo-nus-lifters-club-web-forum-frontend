@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import { Topic } from "../services/types";
 
@@ -9,6 +10,8 @@ const Forum: React.FC = () => {
 
   const [editingTopicId, setEditingTopicId] = useState<number | null>(null);
   const [editingTitle, setEditingTitle] = useState<string>("");
+
+  const navigate = useNavigate();
 
   const token = localStorage.getItem("token");
   const loggedInUser = token
@@ -129,7 +132,12 @@ const Forum: React.FC = () => {
                 </button>
               </>
             ) : (
-              <span>{topic.title}</span>
+              <span
+                style={{ cursor: "pointer", color: "blue" }}
+                onClick={() => navigate(`/forum/${topic.id}`)}
+              >
+                {topic.title}
+              </span>
             )}
 
             {/* Owner controls: Delete & Edit */}
