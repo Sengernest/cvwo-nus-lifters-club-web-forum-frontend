@@ -11,13 +11,17 @@ const Login: React.FC = () => {
     e.preventDefault();
     try {
       const res = await API.post("/login", { username, password });
+
+      // Store token
       localStorage.setItem("token", res.data.token);
-      localStorage.setItem("userId", res.data.user.id.toString());
-      localStorage.setItem("username", res.data.user.username);
+
+      // Store user info as a single object
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
       alert("Login successful!");
       navigate("/forum");
     } catch (err: any) {
-        console.error()
+      console.error(err);
       alert(err.response?.data || "Login failed");
     }
   };

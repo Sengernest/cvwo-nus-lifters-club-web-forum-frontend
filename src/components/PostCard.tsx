@@ -1,4 +1,3 @@
-// src/components/PostCard.tsx
 import React, { useState } from "react";
 import { Post } from "../services/types";
 import API from "../services/api";

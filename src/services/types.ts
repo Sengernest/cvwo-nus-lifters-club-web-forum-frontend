@@ -6,6 +6,7 @@ export interface User {
 export interface Topic {
   id: number;
   title: string;
+  user_id: number;
 }
 
 export interface Post {

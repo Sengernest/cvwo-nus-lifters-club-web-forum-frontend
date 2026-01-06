@@ -2,7 +2,7 @@ import React, { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 
 interface PrivateRouteProps {
-  children: ReactNode; // <- allow any JSX
+  children: ReactNode; 
 }
 
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
