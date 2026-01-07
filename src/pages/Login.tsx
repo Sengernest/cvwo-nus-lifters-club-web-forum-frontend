@@ -18,6 +18,9 @@ const Login: React.FC = () => {
       // Store user info as a single object
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
+      // Dispatch login event so Navbar updates immediately
+      window.dispatchEvent(new Event("login"));
+
       alert("Login successful!");
       navigate("/forum");
     } catch (err: any) {
@@ -27,8 +30,8 @@ const Login: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
+    <form onSubmit={handleSubmit} style={{ textAlign: "center" }}>
+      <input style={{ marginRight: 20}}
         value={username}
         onChange={(e) => setUsername(e.target.value)}
         placeholder="Username"
@@ -39,7 +42,7 @@ const Login: React.FC = () => {
         onChange={(e) => setPassword(e.target.value)}
         placeholder="Password"
       />
-      <button type="submit">Login</button>
+      <button type="submit" style={{ marginLeft: 10 }}  >Login</button>
     </form>
   );
 };

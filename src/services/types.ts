@@ -17,6 +17,8 @@ export interface Post {
   user_id: number;
   likes: number;
   likedByUser?: boolean;
+  createdAt: string;
+  
 }
 
 export interface Comment {

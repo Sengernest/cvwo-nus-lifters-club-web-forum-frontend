@@ -11,6 +11,9 @@ const Topics: React.FC = () => {
   const [editingTopicId, setEditingTopicId] = useState<number | null>(null);
   const [editingTitle, setEditingTitle] = useState<string>("");
 
+  const [showAddInput, setShowAddInput] = useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+
   const navigate = useNavigate();
 
   const token = localStorage.getItem("token");
@@ -35,29 +38,30 @@ const Topics: React.FC = () => {
     fetchTopics();
   }, []);
 
-  // Create a new topic (only if logged in)
+  // Create a new topic
   const handleAddTopic = () => {
-    if (!loggedInUserId) return; // block public
+    if (!loggedInUserId) return;
     if (!newTopic.trim()) return;
 
     API.post("/topics", { title: newTopic })
       .then(() => {
         setNewTopic("");
+        setShowAddInput(false);
         fetchTopics();
       })
       .catch((err) => console.error(err));
   };
 
-  // Delete a topic (only if logged in & owner)
+  // Delete a topic
   const handleDeleteTopic = (id: number) => {
-    if (!loggedInUserId) return; // block public
+    if (!loggedInUserId) return;
 
     API.delete(`/topics/${id}`)
       .then(() => fetchTopics())
       .catch((err) => console.error(err));
   };
 
-  // Edit a topic (only if logged in & owner)
+  // Edit a topic
   const handleEditTopic = (id: number) => {
     if (!editingTitle.trim()) return;
 
@@ -74,31 +78,82 @@ const Topics: React.FC = () => {
       .catch((err) => console.error(err));
   };
 
+  // Determine topics to display based on search
+  const displayedTopics =
+    searchTerm.trim() === ""
+      ? topics // show all if search is empty
+      : topics.filter((t) =>
+          t.title.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
   return (
     <div style={{ padding: "16px" }}>
-      <h2>Forum Topics</h2>
+      {/* Title + Search + Big Add button */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          marginBottom: "16px",
+          gap: "8px",
+        }}
+      >
+        <h2 style={{ margin: 0 }}>Gym Topics</h2>
 
-      {/* Only logged-in users can see Add Topic form */}
-      {loggedInUserId && (
+        {/* Search bar */}
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="🔍 Search topics"
+          style={{ padding: "4px 8px", marginTop: "5px", width: "110px" }}
+        />
+
+        {/* Big + button */}
+        {loggedInUserId && !showAddInput && (
+          <button
+            onClick={() => setShowAddInput(true)}
+            style={{
+              fontSize: "20px",
+              padding: "0px 8px",
+              marginTop: "5px",
+            }}
+            title="Add New Topic"
+          >
+            +
+          </button>
+        )}
+      </div>
+
+      {/* Add topic input */}
+      {showAddInput && loggedInUserId && (
         <div style={{ marginBottom: "16px" }}>
           <input
             type="text"
             value={newTopic}
-            placeholder="Enter topic title"
+            placeholder="Enter Topic Title"
             onChange={(e) => setNewTopic(e.target.value)}
+            style={{ marginRight: "8px", width: "60%" }}
           />
-          <button onClick={handleAddTopic} style={{ marginLeft: "8px" }}>
-            +
+          <button onClick={handleAddTopic} style={{ marginRight: "4px" }}>
+            Add New Topic
+          </button>
+          <button
+            onClick={() => {
+              setShowAddInput(false);
+              setNewTopic("");
+            }}
+          >
+            Cancel
           </button>
         </div>
       )}
 
       {loading ? (
         <p>Loading topics...</p>
-      ) : topics.length === 0 ? (
-        <p>No topics created.</p>
+      ) : displayedTopics.length === 0 ? (
+        <p>No topics found.</p>
       ) : (
-        topics.map((topic) => (
+        displayedTopics.map((topic) => (
           <div
             key={topic.id}
             style={{
