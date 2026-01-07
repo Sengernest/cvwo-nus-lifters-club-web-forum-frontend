@@ -2,7 +2,7 @@ import axios from "axios";
 import type { InternalAxiosRequestConfig } from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:8080", // backend URL
+  baseURL: "http://localhost:8080", 
 });
 
 API.interceptors.request.use((config: InternalAxiosRequestConfig) => {

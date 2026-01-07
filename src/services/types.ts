@@ -15,9 +15,10 @@ export interface Post {
   content: string;
   topic_id: number;
   user_id: number;
+  username: string;
   likes: number;
   likedByUser?: boolean;
-  createdAt: string;
+  created_at: string;
   
 }
 
@@ -26,8 +27,10 @@ export interface Comment {
   content: string;
   post_id: number;
   user_id: number;
+  username: string;
   likes: number;
   likedByUser?: boolean;
+  created_at: string;
 }
 export interface Like {
   id: number;

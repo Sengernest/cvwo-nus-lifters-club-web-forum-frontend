@@ -22,7 +22,6 @@ const Topics: React.FC = () => {
     : null;
   const loggedInUserId = loggedInUser ? loggedInUser.id : null;
 
-  // Fetch topics from backend
   const fetchTopics = () => {
     setLoading(true);
     API.get("/topics")
@@ -38,7 +37,6 @@ const Topics: React.FC = () => {
     fetchTopics();
   }, []);
 
-  // Create a new topic
   const handleAddTopic = () => {
     if (!loggedInUserId) return;
     if (!newTopic.trim()) return;
@@ -52,7 +50,6 @@ const Topics: React.FC = () => {
       .catch((err) => console.error(err));
   };
 
-  // Delete a topic
   const handleDeleteTopic = (id: number) => {
     if (!loggedInUserId) return;
 
@@ -61,7 +58,6 @@ const Topics: React.FC = () => {
       .catch((err) => console.error(err));
   };
 
-  // Edit a topic
   const handleEditTopic = (id: number) => {
     if (!editingTitle.trim()) return;
 
@@ -78,10 +74,9 @@ const Topics: React.FC = () => {
       .catch((err) => console.error(err));
   };
 
-  // Determine topics to display based on search
   const displayedTopics =
     searchTerm.trim() === ""
-      ? topics // show all if search is empty
+      ? topics 
       : topics.filter((t) =>
           t.title.toLowerCase().includes(searchTerm.toLowerCase())
         );

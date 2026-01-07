@@ -6,7 +6,6 @@ import { Post, Comment, Topic } from "../services/types";
 const Posts: React.FC = () => {
   const { topicId } = useParams();
 
-  // --- State ---
   const [posts, setPosts] = useState<Post[]>([]);
   const [topic, setTopic] = useState<Topic | null>(null);
   const [loading, setLoading] = useState(true);
@@ -17,15 +16,13 @@ const Posts: React.FC = () => {
   const [showAddPostInput, setShowAddPostInput] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [sortOption, setSortOption] = useState<
-   "alphabetic" | "recent" | "liked"
+    "alphabetic" | "recent" | "liked"
   >("alphabetic");
 
- 
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [editingContent, setEditingContent] = useState("");
 
-  // --- Comment state ---
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
@@ -38,16 +35,17 @@ const Posts: React.FC = () => {
     : null;
   const loggedInUserId = loggedInUser ? loggedInUser.id : null;
 
-  // --- Fetch posts ---
   const fetchPosts = useCallback(() => {
     if (!topicId) return;
     setLoading(true);
     API.get(`/topics/${topicId}/posts`)
       .then((res) => {
+        console.log("Fetched posts:", res.data); 
         const postsWithLikes = (res.data as Post[]).map((p) => ({
           ...p,
           likes: p.likes || 0,
           likedByUser: p.likedByUser || false,
+          createdAt: p.created_at,
         }));
         setPosts(postsWithLikes);
       })
@@ -55,7 +53,6 @@ const Posts: React.FC = () => {
       .finally(() => setLoading(false));
   }, [topicId]);
 
-  // --- Fetch topic ---
   const fetchTopic = useCallback(() => {
     if (!topicId) return;
     API.get(`/topics/${topicId}`)
@@ -68,7 +65,6 @@ const Posts: React.FC = () => {
     fetchTopic();
   }, [fetchPosts, fetchTopic]);
 
-  // --- Toggle post expand to show comments ---
   const toggleExpandPost = (postId: number) => {
     if (expandedPostId === postId) {
       setExpandedPostId(null);
@@ -79,7 +75,6 @@ const Posts: React.FC = () => {
     }
   };
 
-  // --- Comments CRUD ---
   const fetchComments = (postId: number) => {
     API.get(`/posts/${postId}/comments`)
       .then((res) => {
@@ -87,6 +82,7 @@ const Posts: React.FC = () => {
           ...c,
           likes: c.likes || 0,
           likedByUser: c.likedByUser || false,
+            createdAt: c.created_at,
         }));
         setComments(commentsWithLikes);
       })
@@ -143,7 +139,6 @@ const Posts: React.FC = () => {
       .catch((err) => console.error("Error toggling like:", err));
   };
 
-  // --- Posts CRUD ---
   const handleAddPost = () => {
     if (!loggedInUserId || !newTitle.trim() || !newContent.trim()) return;
 
@@ -196,23 +191,50 @@ const Posts: React.FC = () => {
       .catch((err) => console.error("Error toggling like:", err));
   };
 
-const displayedPosts = posts
-  .filter((p) =>
-    searchTerm.trim() === ""
-      ? true
-      : p.title.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-  .sort((a, b) => {
-    if (sortOption === "recent") {
-      return (
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-    } else if (sortOption === "liked") {
-      return (b.likes || 0) - (a.likes || 0);
-    } else {
+  const displayedPosts = posts
+    .filter((p) =>
+      searchTerm.trim() === ""
+        ? true
+        : p.title.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortOption === "recent") {
+        return (
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+      } else if (sortOption === "liked") {
+        return (b.likes || 0) - (a.likes || 0);
+      } else {
         return a.title.localeCompare(b.title);
-    }
-  });
+      }
+    });
+
+  function timeAgo(dateString?: string) {
+    if (!dateString) return ""; 
+
+    const date = new Date(dateString.replace(" ", "T"));
+    if (isNaN(date.getTime())) return ""; 
+
+    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+
+    let interval = Math.floor(seconds / 31536000);
+    if (interval >= 1) return `${interval} year${interval > 1 ? "s" : ""} ago`;
+
+    interval = Math.floor(seconds / 2592000);
+    if (interval >= 1) return `${interval} month${interval > 1 ? "s" : ""} ago`;
+
+    interval = Math.floor(seconds / 86400);
+    if (interval >= 1) return `${interval} day${interval > 1 ? "s" : ""} ago`;
+
+    interval = Math.floor(seconds / 3600);
+    if (interval >= 1) return `${interval} hour${interval > 1 ? "s" : ""} ago`;
+
+    interval = Math.floor(seconds / 60);
+    if (interval >= 1)
+      return `${interval} minute${interval > 1 ? "s" : ""} ago`;
+
+    return "Just now";
+  }
 
 return (
   <div style={{ padding: "16px" }}>
@@ -304,198 +326,219 @@ return (
     ) : displayedPosts.length === 0 ? (
       <p>No posts yet.</p>
     ) : (
-      displayedPosts.map((post) => (
-        <div
-          key={post.id}
-          style={{
-            border: "1px solid #ccc",
-            padding: "8px",
-            marginBottom: "8px",
-          }}
-        >
-          {editingPostId === post.id ? (
-            <>
-              <input
-                type="text"
-                value={editingTitle}
-                onChange={(e) => setEditingTitle(e.target.value)}
-                style={{ width: "100%" }}
-              />
-              <textarea
-                value={editingContent}
-                onChange={(e) => setEditingContent(e.target.value)}
-                style={{ width: "100%", minHeight: "60px" }}
-              />
-              <button onClick={() => handleEditPost(post.id)}>Save</button>
-              <button onClick={() => setEditingPostId(null)}>Cancel</button>
-            </>
-          ) : (
-            <>
-              <h4
-                style={{ cursor: "pointer", color: "blue" }}
-                onClick={() => toggleExpandPost(post.id)}
-              >
-                {post.title}
-              </h4>
-              <p>{post.content}</p>
-              <button
-                onClick={() => handleToggleLikePost(post)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: post.likedByUser ? "red" : "gray",
-                }}
-              >
-                ❤️ {post.likes || 0}
-              </button>
-            </>
-          )}
+      displayedPosts.map((post) => {
 
-          {loggedInUserId === post.user_id && editingPostId !== post.id && (
-            <>
-              <button onClick={() => handleDeletePost(post.id)}>Delete</button>
-              <button
-                onClick={() => {
-                  setEditingPostId(post.id);
-                  setEditingTitle(post.title);
-                  setEditingContent(post.content);
-                }}
-                style={{ marginLeft: "4px" }}
-              >
-                Edit
-              </button>
-            </>
-          )}
+        return (
+          <div
+            key={post.id}
+            style={{
+              border: "1px solid #ccc",
+              padding: "8px",
+              marginBottom: "8px",
+            }}
+          >
+            {editingPostId === post.id ? (
+              <>
+                <input
+                  type="text"
+                  value={editingTitle}
+                  onChange={(e) => setEditingTitle(e.target.value)}
+                  style={{ width: "100%" }}
+                />
+                <textarea
+                  value={editingContent}
+                  onChange={(e) => setEditingContent(e.target.value)}
+                  style={{ width: "100%", minHeight: "60px" }}
+                />
+                <button onClick={() => handleEditPost(post.id)}>Save</button>
+                <button onClick={() => setEditingPostId(null)}>Cancel</button>
+              </>
+            ) : (
+              <>
+                <h4
+                  style={{ cursor: "pointer", color: "blue" }}
+                  onClick={() => toggleExpandPost(post.id)}
+                >
+                  {post.title}
+                </h4>
+                <p>{post.content}</p>
 
-          {/* Comments */}
-          {expandedPostId === post.id && (
-            <div style={{ marginTop: "16px" }}>
-              <h4
-                style={{
-                  display: "flex",
-                  gap: "8px",
-                  marginBottom: "8px",
-                }}
-              >
-                Comments:
-                {/* Big + button for adding a comment */}
-                {loggedInUserId && !showAddCommentInput && (
-                  <button
-                    onClick={() => setShowAddCommentInput(true)}
-                    style={{
-                      marginTop: "1px",
-                      fontSize: "15px",
-                      padding: "0 6px",
-                    }}
-                    title="Add Comment"
-                  >
-                    +
-                  </button>
-                )}
-              </h4>
+                <small style={{ color: "gray" }}>
+                  By{" "}
+                  {loggedInUserId === post.user_id
+                    ? "You"
+                    : post.username || "Unknown"}{" "}
+                  • {timeAgo(post.created_at)}
+                </small>
 
-              {/* Add comment input */}
-              {showAddCommentInput && (
-                <div style={{ marginBottom: "16px" }}>
-                  <textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Enter Comment Content"
-                    style={{ width: "100%", minHeight: "50px" }}
-                  />
-                  <button
-                    onClick={() => {
-                      handleAddComment(post.id);
-                      setShowAddCommentInput(false);
-                    }}
-                    style={{ marginRight: "4px" }}
-                  >
-                    Add New Comment
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowAddCommentInput(false);
-                      setNewComment("");
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
+                <br />
 
-              {comments.length === 0 ? (
-                <p>No comments yet.</p>
-              ) : (
-                comments.map((comment) => (
-                  <div
-                    key={comment.id}
-                    style={{
-                      border: "1px solid #eee",
-                      padding: "4px",
-                      marginTop: "8px",
-                    }}
-                  >
-                    {editingCommentId === comment.id ? (
-                      <>
-                        <textarea
-                          value={editingCommentContent}
-                          onChange={(e) =>
-                            setEditingCommentContent(e.target.value)
-                          }
-                          style={{ width: "100%", minHeight: "40px" }}
-                        />
-                        <button onClick={() => handleEditComment(comment.id)}>
-                          Save
-                        </button>
-                        <button onClick={() => setEditingCommentId(null)}>
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <p>{comment.content}</p>
-                        <button
-                          onClick={() => handleToggleLikeComment(comment)}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: comment.likedByUser ? "red" : "gray",
-                          }}
-                        >
-                          ❤️ {comment.likes || 0}
-                        </button>
+                <button
+                  onClick={() => handleToggleLikePost(post)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: post.likedByUser ? "red" : "gray",
+                  }}
+                >
+                  ❤️ {post.likes || 0}
+                </button>
+              </>
+            )}
 
-                        {loggedInUserId === comment.user_id && (
-                          <>
-                            <button
-                              onClick={() => handleDeleteComment(comment.id)}
-                              style={{ marginLeft: "4px" }}
-                            >
-                              Delete
-                            </button>
-                            <button
-                              onClick={() => {
-                                setEditingCommentId(comment.id);
-                                setEditingCommentContent(comment.content);
-                              }}
-                              style={{ marginLeft: "4px" }}
-                            >
-                              Edit
-                            </button>
-                          </>
-                        )}
-                      </>
-                    )}
+            {loggedInUserId === post.user_id && editingPostId !== post.id && (
+              <>
+                <button onClick={() => handleDeletePost(post.id)}>
+                  Delete
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingPostId(post.id);
+                    setEditingTitle(post.title);
+                    setEditingContent(post.content);
+                  }}
+                  style={{ marginLeft: "4px" }}
+                >
+                  Edit
+                </button>
+              </>
+            )}
+
+            {/* Comments */}
+            {expandedPostId === post.id && (
+              <div style={{ marginTop: "16px" }}>
+                <h4
+                  style={{
+                    display: "flex",
+                    gap: "8px",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Comments:
+                  {loggedInUserId && !showAddCommentInput && (
+                    <button
+                      onClick={() => setShowAddCommentInput(true)}
+                      style={{
+                        marginTop: "1px",
+                        fontSize: "15px",
+                        padding: "0 6px",
+                      }}
+                      title="Add Comment"
+                    >
+                      +
+                    </button>
+                  )}
+                </h4>
+
+                {showAddCommentInput && (
+                  <div style={{ marginBottom: "16px" }}>
+                    <textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Enter Comment Content"
+                      style={{ width: "100%", minHeight: "50px" }}
+                    />
+                    <button
+                      onClick={() => {
+                        handleAddComment(post.id);
+                        setShowAddCommentInput(false);
+                      }}
+                      style={{ marginRight: "4px" }}
+                    >
+                      Add New Comment
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAddCommentInput(false);
+                        setNewComment("");
+                      }}
+                    >
+                      Cancel
+                    </button>
                   </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-      ))
+                )}
+
+                {comments.length === 0 ? (
+                  <p>No comments yet.</p>
+                ) : (
+                  comments.map((comment) => (
+                    <div
+                      key={comment.id}
+                      style={{
+                        border: "1px solid #eee",
+                        padding: "4px",
+                        marginTop: "8px",
+                      }}
+                    >
+                      {editingCommentId === comment.id ? (
+                        <>
+                          <textarea
+                            value={editingCommentContent}
+                            onChange={(e) =>
+                              setEditingCommentContent(e.target.value)
+                            }
+                            style={{ width: "100%", minHeight: "40px" }}
+                          />
+                          <button onClick={() => handleEditComment(comment.id)}>
+                            Save
+                          </button>
+                          <button onClick={() => setEditingCommentId(null)}>
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <p>{comment.content}</p>
+                          <small style={{ color: "gray" }}>
+                            By{" "}
+                            {loggedInUserId === comment.user_id
+                              ? "You"
+                              : comment.username || "Unknown"}{" "}
+                             • {timeAgo(comment.created_at)}
+                          </small>
+                          <br />
+                          <button
+                            onClick={() => handleToggleLikeComment(comment)}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: comment.likedByUser ? "red" : "gray",
+                            }}
+                          >
+                            ❤️ {comment.likes || 0}
+                          </button>
+                          {loggedInUserId === comment.user_id && (
+                            <>
+                              <button
+                                onClick={() => handleDeleteComment(comment.id)}
+                                style={{ marginLeft: "4px" }}
+                              >
+                                Delete
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingCommentId(comment.id);
+                                  setEditingCommentContent(comment.content);
+                                }}
+                                style={{ marginLeft: "4px" }}
+                              >
+                                Edit
+                              </button>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })
     )}
   </div>
-);
-}
+ );
+};
 
 export default Posts;
