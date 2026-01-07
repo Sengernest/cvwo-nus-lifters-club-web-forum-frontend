@@ -4,7 +4,7 @@ import API from "../services/api";
 import { Comment } from "../services/types";
 
 const Comments: React.FC = () => {
-  const { topicId, postId } = useParams();
+  const { postId } = useParams();
 
   const [comments, setComments] = useState<Comment[]>([]);
   const [newContent, setNewContent] = useState("");
@@ -18,11 +18,17 @@ const Comments: React.FC = () => {
     : null;
   const loggedInUserId = loggedInUser ? loggedInUser.id : null;
 
+  // Fetch comments
   const fetchComments = useCallback(() => {
     setLoading(true);
     API.get(`/posts/${postId}/comments`)
       .then((res) => {
-        setComments(Array.isArray(res.data) ? res.data : []);
+        const commentsWithLikes = (res.data as Comment[]).map((c) => ({
+          ...c,
+          likes: c.likes || 0,
+          likedByUser: c.likedByUser || false, // track if user liked
+        }));
+        setComments(commentsWithLikes);
       })
       .catch((err) => console.error("Error fetching comments:", err))
       .finally(() => setLoading(false));
@@ -75,6 +81,20 @@ const Comments: React.FC = () => {
       .catch((err) => console.error("Error editing comment:", err));
   };
 
+  // Toggle like/unlike
+  const handleToggleLikeComment = (comment: Comment) => {
+    if (!loggedInUserId) return;
+
+    const alreadyLiked = comment.likedByUser || false;
+    const endpoint = `/comments/${comment.id}/${
+      alreadyLiked ? "unlike" : "like"
+    }`;
+
+    API.post(endpoint, {}, { headers: { Authorization: `Bearer ${token}` } })
+      .then(() => fetchComments())
+      .catch((err) => console.error("Error toggling like on comment:", err));
+  };
+
   return (
     <div style={{ padding: "16px" }}>
       <h2>Comments</h2>
@@ -123,26 +143,50 @@ const Comments: React.FC = () => {
                 </button>
               </>
             ) : (
-              <p>{comment.content}</p>
-            )}
+              <>
+                <p>{comment.content}</p>
 
-            {loggedInUserId === comment.user_id &&
-              editingCommentId !== comment.id && (
-                <>
-                  <button onClick={() => handleDeleteComment(comment.id)}>
-                    Delete
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingCommentId(comment.id);
-                      setEditingContent(comment.content);
-                    }}
-                    style={{ marginLeft: "4px" }}
-                  >
-                    Edit
-                  </button>
-                </>
-              )}
+                {/* Likes */}
+                <button
+                  onClick={() => handleToggleLikeComment(comment)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: loggedInUserId ? "pointer" : "default",
+                    color: comment.likedByUser ? "red" : "gray",
+                    fontSize: "16px",
+                  }}
+                  title={
+                    loggedInUserId
+                      ? comment.likedByUser
+                        ? "Unlike"
+                        : "Like"
+                      : "Login to like"
+                  }
+                >
+                  ❤️ {comment.likes || 0}
+                </button>
+
+                {/* Edit/Delete buttons */}
+                {loggedInUserId === comment.user_id &&
+                  editingCommentId !== comment.id && (
+                    <>
+                      <button onClick={() => handleDeleteComment(comment.id)}>
+                        Delete
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingCommentId(comment.id);
+                          setEditingContent(comment.content);
+                        }}
+                        style={{ marginLeft: "4px" }}
+                      >
+                        Edit
+                      </button>
+                    </>
+                  )}
+              </>
+            )}
           </div>
         ))
       )}

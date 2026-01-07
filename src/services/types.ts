@@ -16,6 +16,7 @@ export interface Post {
   topic_id: number;
   user_id: number;
   likes: number;
+  likedByUser?: boolean;
 }
 
 export interface Comment {
@@ -24,6 +25,7 @@ export interface Comment {
   post_id: number;
   user_id: number;
   likes: number;
+  likedByUser?: boolean;
 }
 export interface Like {
   id: number;
