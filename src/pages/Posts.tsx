@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import API from "../services/api";
-import { Post } from "../services/types";
+import { Post, Topic } from "../services/types";
 
 const Posts: React.FC = () => {
   const { topicId } = useParams();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
+
+  const [topic, setTopic] = useState<Topic | null>(null);
+
+
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
@@ -30,10 +35,23 @@ const Posts: React.FC = () => {
       .catch((err) => console.error("Error fetching posts:", err))
       .finally(() => setLoading(false));
   }, [topicId]);
+    
+    const fetchTopic = React.useCallback(() => {
+    if (!topicId) return;
 
-  useEffect(() => {
+    API.get(`/topics/${topicId}`)
+        .then((res) => {
+        console.log("Fetched topic:", res.data);
+        setTopic(res.data as Topic);
+        })
+        .catch((err) => console.error("Error fetching topic:", err));
+    }, [topicId]);
+
+    useEffect(() => {
     fetchPosts();
-  }, [fetchPosts]);
+    fetchTopic();
+    }, [fetchPosts, fetchTopic]);
+
 
   // Add post
   const handleAddPost = () => {
@@ -90,7 +108,7 @@ const Posts: React.FC = () => {
 
   return (
     <div style={{ padding: "16px" }}>
-      <h2>Posts</h2>
+      <h2>Posts {topic && ` from ${topic.title}`}</h2>
 
       {loggedInUserId && (
         <div style={{ marginBottom: "16px" }}>
@@ -146,7 +164,12 @@ const Posts: React.FC = () => {
               </>
             ) : (
               <>
-                <h4>{post.title}</h4>
+                <h4
+                  style={{ cursor: "pointer", color: "blue" }}
+                  onClick={() => navigate(`/forum/${topicId}/${post.id}`)}
+                >
+                  {post.title}
+                </h4>
                 <p>{post.content}</p>
               </>
             )}

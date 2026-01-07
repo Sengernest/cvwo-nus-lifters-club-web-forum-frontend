@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import { Topic } from "../services/types";
 
-const Forum: React.FC = () => {
+const Topics: React.FC = () => {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [newTopic, setNewTopic] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
@@ -166,4 +166,4 @@ const Forum: React.FC = () => {
   );
 };
 
-export default Forum;
+export default Topics;
