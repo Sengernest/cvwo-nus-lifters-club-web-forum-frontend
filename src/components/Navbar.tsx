@@ -58,7 +58,11 @@ const Navbar: React.FC = () => {
         </>
       ) : (
         <button
-          onClick={handleLogout}
+          onClick={() => {
+            if (window.confirm("Are you sure you want to logout?")) {
+              handleLogout();
+            }
+          }}
           style={{
             cursor: "pointer",
             background: "none",
@@ -72,7 +76,12 @@ const Navbar: React.FC = () => {
           Logout
         </button>
       )}
-      <p style={{ fontSize: "small" }}> {!loggedIn ? "Log in/Register new account to create posts or comments" : ""}</p>
+      <p style={{ fontSize: "small" }}>
+        {" "}
+        {!loggedIn
+          ? "Log in/Register new account to create posts or comments"
+          : ""}
+      </p>
     </nav>
   );
 };

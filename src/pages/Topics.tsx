@@ -129,7 +129,16 @@ const Topics: React.FC = () => {
             onChange={(e) => setNewTopic(e.target.value)}
             style={{ marginRight: "8px", width: "60%" }}
           />
-          <button onClick={handleAddTopic} style={{ marginRight: "4px" }}>
+          <button
+            onClick={() => {
+              if (
+                window.confirm("Are you sure you want to add this new topic?")
+              ) {
+                handleAddTopic();
+              }
+            }}
+            style={{ marginRight: "4px" }}
+          >
             Add New Topic
           </button>
           <button
@@ -169,7 +178,15 @@ const Topics: React.FC = () => {
                   onChange={(e) => setEditingTitle(e.target.value)}
                 />
                 <button
-                  onClick={() => handleEditTopic(topic.id)}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Are you sure you want to save changes to this topic?"
+                      )
+                    ) {
+                      handleEditTopic(topic.id);
+                    }
+                  }}
                   style={{ marginLeft: "4px" }}
                 >
                   Save
@@ -193,7 +210,17 @@ const Topics: React.FC = () => {
             {/* Owner controls: Delete & Edit */}
             {loggedInUserId && topic.user_id === loggedInUserId && (
               <div>
-                <button onClick={() => handleDeleteTopic(topic.id)}>
+                <button
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Are you sure you want to delete this topic?"
+                      )
+                    ) {
+                      handleDeleteTopic(topic.id);
+                    }
+                  }}
+                >
                   Delete
                 </button>
                 {editingTopicId !== topic.id && (

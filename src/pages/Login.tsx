@@ -21,7 +21,6 @@ const Login: React.FC = () => {
       // Dispatch login event so Navbar updates immediately
       window.dispatchEvent(new Event("login"));
 
-      alert("Login successful!");
       navigate("/forum");
     } catch (err: any) {
       console.error(err);

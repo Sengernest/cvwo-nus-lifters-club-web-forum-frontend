@@ -10,6 +10,13 @@ const Register: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+      if (
+        !window.confirm("Are you sure you want to register with this account?")
+      ) {
+        return;
+      }
+      
     try {
       const res = await API.post("/register", { username, password });
       alert("Registered successfully! Please login with your new account!");
