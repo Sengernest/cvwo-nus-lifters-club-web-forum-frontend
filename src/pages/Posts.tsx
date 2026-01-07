@@ -15,7 +15,7 @@ const Posts: React.FC = () => {
   const [newContent, setNewContent] = useState("");
   const [showAddPostInput, setShowAddPostInput] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [sortOption, setSortOption] = useState<
+  const [postSortOption, setPostSortOption] = useState<
     "alphabetic" | "recent" | "liked"
   >("alphabetic");
 
@@ -28,6 +28,10 @@ const Posts: React.FC = () => {
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editingCommentContent, setEditingCommentContent] = useState("");
   const [showAddCommentInput, setShowAddCommentInput] = useState(false);
+const [commentSortOption, setCommentSortOption] = useState<"recent" | "liked">(
+  "recent"
+);
+
 
   const token = localStorage.getItem("token");
   const loggedInUser = token
@@ -198,11 +202,11 @@ const Posts: React.FC = () => {
         : p.title.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
-      if (sortOption === "recent") {
+      if (postSortOption === "recent") {
         return (
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
-      } else if (sortOption === "liked") {
+      } else if (postSortOption === "liked") {
         return (b.likes || 0) - (a.likes || 0);
       } else {
         return a.title.localeCompare(b.title);
@@ -262,9 +266,9 @@ return (
 
       {/* Sort dropdown */}
       <select
-        value={sortOption}
+        value={postSortOption}
         onChange={(e) =>
-          setSortOption(e.target.value as "alphabetic" | "recent" | "liked")
+          setPostSortOption(e.target.value as "alphabetic" | "recent" | "liked")
         }
         style={{ padding: "4px 8px", marginTop: "5px" }}
       >
@@ -410,18 +414,36 @@ return (
                 <h4
                   style={{
                     display: "flex",
+                    alignItems: "center",
                     gap: "8px",
                     marginBottom: "8px",
                   }}
                 >
-                  Comments:
+                  <span>Comments:</span>
+
+                  {/* Comment sort dropdown */}
+                  <select
+                    value={commentSortOption}
+                    onChange={(e) =>
+                      setCommentSortOption(e.target.value as "recent" | "liked")
+                    }
+                    style={{
+                      padding: "2px 6px",
+                      fontSize: "12px",
+                      marginTop: "3px",
+                    }}
+                  >
+                    <option value="recent">Most Recent</option>
+                    <option value="liked">Most Liked</option>
+                  </select>
+
                   {loggedInUserId && !showAddCommentInput && (
                     <button
                       onClick={() => setShowAddCommentInput(true)}
                       style={{
-                        marginTop: "1px",
                         fontSize: "15px",
                         padding: "0 6px",
+                        marginTop: "3px",
                       }}
                       title="Add Comment"
                     >
@@ -461,75 +483,90 @@ return (
                 {comments.length === 0 ? (
                   <p>No comments yet.</p>
                 ) : (
-                  comments.map((comment) => (
-                    <div
-                      key={comment.id}
-                      style={{
-                        border: "1px solid #eee",
-                        padding: "4px",
-                        marginTop: "8px",
-                      }}
-                    >
-                      {editingCommentId === comment.id ? (
-                        <>
-                          <textarea
-                            value={editingCommentContent}
-                            onChange={(e) =>
-                              setEditingCommentContent(e.target.value)
-                            }
-                            style={{ width: "100%", minHeight: "40px" }}
-                          />
-                          <button onClick={() => handleEditComment(comment.id)}>
-                            Save
-                          </button>
-                          <button onClick={() => setEditingCommentId(null)}>
-                            Cancel
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <p>{comment.content}</p>
-                          <small style={{ color: "gray" }}>
-                            By{" "}
-                            {loggedInUserId === comment.user_id
-                              ? "You"
-                              : comment.username || "Unknown"}{" "}
-                             • {timeAgo(comment.created_at)}
-                          </small>
-                          <br />
-                          <button
-                            onClick={() => handleToggleLikeComment(comment)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: comment.likedByUser ? "red" : "gray",
-                            }}
-                          >
-                            ❤️ {comment.likes || 0}
-                          </button>
-                          {loggedInUserId === comment.user_id && (
-                            <>
-                              <button
-                                onClick={() => handleDeleteComment(comment.id)}
-                                style={{ marginLeft: "4px" }}
-                              >
-                                Delete
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setEditingCommentId(comment.id);
-                                  setEditingCommentContent(comment.content);
-                                }}
-                                style={{ marginLeft: "4px" }}
-                              >
-                                Edit
-                              </button>
-                            </>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  ))
+                  comments
+                    .slice()
+                    .sort((a, b) => {
+                      if (commentSortOption === "liked") {
+                        return (b.likes || 0) - (a.likes || 0);
+                      }
+                      return (
+                        new Date(b.created_at).getTime() -
+                        new Date(a.created_at).getTime()
+                      );
+                    })
+                    .map((comment) => (
+                      <div
+                        key={comment.id}
+                        style={{
+                          border: "1px solid #0c20d6ff",
+                          padding: "4px",
+                          marginTop: "8px",
+                        }}
+                      >
+                        {editingCommentId === comment.id ? (
+                          <>
+                            <textarea
+                              value={editingCommentContent}
+                              onChange={(e) =>
+                                setEditingCommentContent(e.target.value)
+                              }
+                              style={{ width: "100%", minHeight: "40px" }}
+                            />
+                            <button
+                              onClick={() => handleEditComment(comment.id)}
+                            >
+                              Save
+                            </button>
+                            <button onClick={() => setEditingCommentId(null)}>
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <p>{comment.content}</p>
+                            <small style={{ color: "gray" }}>
+                              By{" "}
+                              {loggedInUserId === comment.user_id
+                                ? "You"
+                                : comment.username || "Unknown"}{" "}
+                              • {timeAgo(comment.created_at)}
+                            </small>
+                            <br />
+                            <button
+                              onClick={() => handleToggleLikeComment(comment)}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                color: comment.likedByUser ? "red" : "gray",
+                              }}
+                            >
+                              ❤️ {comment.likes || 0}
+                            </button>
+                            {loggedInUserId === comment.user_id && (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    handleDeleteComment(comment.id)
+                                  }
+                                  style={{ marginLeft: "4px" }}
+                                >
+                                  Delete
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingCommentId(comment.id);
+                                    setEditingCommentContent(comment.content);
+                                  }}
+                                  style={{ marginLeft: "4px" }}
+                                >
+                                  Edit
+                                </button>
+                              </>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    ))
                 )}
               </div>
             )}
