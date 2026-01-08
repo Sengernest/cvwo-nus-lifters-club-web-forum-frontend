@@ -16,9 +16,9 @@ const Register: React.FC = () => {
       ) {
         return;
       }
-      
+
     try {
-      const res = await API.post("/register", { username, password });
+      await API.post("/register", { username, password });
       alert("Registered successfully! Please login with your new account!");
       navigate("/login");
     } catch (err: any) {
