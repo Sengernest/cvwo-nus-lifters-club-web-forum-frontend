@@ -2,7 +2,7 @@ import axios from "axios";
 import type { InternalAxiosRequestConfig } from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:8080", 
+  baseURL: "https://cvwo-nus-lifters-club-web-forum-backend.onrender.com",
 });
 
 API.interceptors.request.use((config: InternalAxiosRequestConfig) => {
