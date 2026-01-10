@@ -31,7 +31,7 @@ const Register: React.FC = () => {
     <PageContainer maxWidth="sm">
       <Paper sx={{ p: 3 }}>
         <Typography variant="h5" sx={{ mb: 2 }}>
-          Register
+          Register a New Account
         </Typography>
 
         <Box

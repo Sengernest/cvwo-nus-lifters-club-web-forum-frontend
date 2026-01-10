@@ -1,14 +1,13 @@
 import axios from "axios";
 import type { InternalAxiosRequestConfig } from "axios";
 
-const API = axios.create({
-  baseURL: "http://localhost:8080"
-});
+const baseURL = process.env.REACT_APP_API_URL || "https://localhost:8080";
+
+const API = axios.create({ baseURL });
 
 API.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = localStorage.getItem("token");
   if (token) {
-
     config.headers = config.headers ?? {};
     (
       config.headers as Record<string, string>

@@ -414,7 +414,7 @@ const Posts: React.FC = () => {
                     </Stack>
                   ) : (
                     <>
-                      {/* Title row with top-right actions */}
+                      {/* Post Title row */}
                       <Stack
                         direction="row"
                         alignItems="flex-start"
@@ -477,7 +477,6 @@ const Posts: React.FC = () => {
                         {post.content}
                       </Typography>
 
-                      {/* Meta line */}
                       <Typography
                         variant="caption"
                         color="text.secondary"
@@ -490,7 +489,7 @@ const Posts: React.FC = () => {
                   )}
                 </CardContent>
 
-                {/* Like + toggle comments */}
+                {/* Toggle Like and Comments */}
                 {editingPostId !== post.id && (
                   <>
                     <Divider />
@@ -499,9 +498,7 @@ const Posts: React.FC = () => {
                         startIcon={<FavoriteIcon />}
                         onClick={() => handleToggleLikePost(post)}
                         sx={{
-                          color: post.likedByUser
-                            ? "error.main"
-                            : "text.secondary",
+                          color: "error.main"
                         }}
                       >
                         {post.likes || 0}
@@ -741,9 +738,7 @@ const Posts: React.FC = () => {
                                         handleToggleLikeComment(comment)
                                       }
                                       sx={{
-                                        color: comment.likedByUser
-                                          ? "error.main"
-                                          : "text.secondary",
+                                        color: "error.main"
                                       }}
                                     >
                                       {comment.likes || 0}

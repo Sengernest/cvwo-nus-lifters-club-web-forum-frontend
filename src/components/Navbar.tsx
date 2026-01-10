@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { AppBar, Toolbar, Typography, Button, Box, Link } from "@mui/material";
+import { AppBar, Toolbar, Typography, Button, Box } from "@mui/material";
 import ConfirmDialog from "./ConfirmDialog";
 
 const Navbar: React.FC = () => {
@@ -60,13 +60,13 @@ const Navbar: React.FC = () => {
             </Typography>
             {!loggedIn && (
               <Typography variant="caption" sx={{ opacity: 0.9 }}>
-                Log in / Register to create posts or comments
+                Log in / Register to create and like posts or comments
               </Typography>
             )}
           </Box>
 
           <Button color="inherit" component={RouterLink} to="/forum">
-            Forum
+            Topics
           </Button>
 
           {!loggedIn ? (

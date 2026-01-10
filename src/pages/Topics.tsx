@@ -192,10 +192,12 @@ const Topics: React.FC = () => {
                       <TextField
                         size="small"
                         value={editingTitle}
+                        label="Edit title"
                         onChange={(e) => setEditingTitle(e.target.value)}
                         fullWidth
                       />
                       <IconButton
+                        color="primary"
                         onClick={() =>
                           setConfirm({
                             open: true,
