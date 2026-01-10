@@ -1,7 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardActions,
+  CircularProgress,
+  IconButton,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import SaveIcon from "@mui/icons-material/Save";
+import CloseIcon from "@mui/icons-material/Close";
+
 import API from "../services/api";
 import { Topic } from "../services/types";
+import PageContainer from "../components/PageContainer";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 const Topics: React.FC = () => {
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -13,6 +33,12 @@ const Topics: React.FC = () => {
 
   const [showAddInput, setShowAddInput] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
+
+  const [confirm, setConfirm] = useState<{
+    open: boolean;
+    message: string;
+    onConfirm: () => void;
+  }>({ open: false, message: "", onConfirm: () => {} });
 
   const navigate = useNavigate();
 
@@ -76,170 +102,170 @@ const Topics: React.FC = () => {
 
   const displayedTopics =
     searchTerm.trim() === ""
-      ? topics 
+      ? topics
       : topics.filter((t) =>
           t.title.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
   return (
-    <div style={{ padding: "16px" }}>
-      {/* Title + Search + Big Add button */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          marginBottom: "16px",
-          gap: "8px",
-        }}
+    <PageContainer maxWidth="md">
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        sx={{ mb: 2 }}
       >
-        <h2 style={{ margin: 0 }}>Gym Topics</h2>
+        <Typography variant="h5">Gym Topics</Typography>
 
-        {/* Search bar */}
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="🔍 Search topics"
-          style={{ padding: "4px 8px", marginTop: "5px", width: "110px" }}
-        />
-
-        {/* Big + button */}
-        {loggedInUserId && !showAddInput && (
-          <button
-            onClick={() => setShowAddInput(true)}
-            style={{
-              fontSize: "20px",
-              padding: "0px 8px",
-              marginTop: "5px",
-            }}
-            title="Add New Topic"
-          >
-            +
-          </button>
-        )}
-      </div>
-
-      {/* Add topic input */}
-      {showAddInput && loggedInUserId && (
-        <div style={{ marginBottom: "16px" }}>
-          <input
-            type="text"
-            value={newTopic}
-            placeholder="Enter Topic Title"
-            onChange={(e) => setNewTopic(e.target.value)}
-            style={{ marginRight: "8px", width: "60%" }}
+        <Stack direction="row" spacing={1} alignItems="center">
+          <TextField
+            size="small"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search topics"
           />
-          <button
-            onClick={() => {
-              if (
-                window.confirm("Are you sure you want to add this new topic?")
-              ) {
-                handleAddTopic();
-              }
-            }}
-            style={{ marginRight: "4px" }}
-          >
-            Add New Topic
-          </button>
-          <button
-            onClick={() => {
-              setShowAddInput(false);
-              setNewTopic("");
-            }}
-          >
-            Cancel
-          </button>
-        </div>
+
+          {loggedInUserId && !showAddInput && (
+            <IconButton
+              onClick={() => setShowAddInput(true)}
+              aria-label="add topic"
+            >
+              <AddIcon />
+            </IconButton>
+          )}
+        </Stack>
+      </Stack>
+
+      {showAddInput && loggedInUserId && (
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <Stack spacing={2}>
+              <TextField
+                label="New topic title"
+                value={newTopic}
+                onChange={(e) => setNewTopic(e.target.value)}
+              />
+              <Stack direction="row" spacing={1}>
+                <Button
+                  variant="contained"
+                  onClick={() =>
+                    setConfirm({
+                      open: true,
+                      message: "Are you sure you want to add this new topic?",
+                      onConfirm: handleAddTopic,
+                    })
+                  }
+                >
+                  Add Topic
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setShowAddInput(false);
+                    setNewTopic("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
       )}
 
       {loading ? (
-        <p>Loading topics...</p>
+        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+          <CircularProgress />
+        </Box>
       ) : displayedTopics.length === 0 ? (
-        <p>No topics found.</p>
+        <Typography>No topics found.</Typography>
       ) : (
-        displayedTopics.map((topic) => (
-          <div
-            key={topic.id}
-            style={{
-              border: "1px solid #ccc",
-              padding: "8px",
-              marginBottom: "8px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            {/* Topic title or edit input */}
-            {editingTopicId === topic.id ? (
-              <>
-                <input
-                  type="text"
-                  value={editingTitle}
-                  onChange={(e) => setEditingTitle(e.target.value)}
-                />
-                <button
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        "Are you sure you want to save changes to this topic?"
-                      )
-                    ) {
-                      handleEditTopic(topic.id);
-                    }
-                  }}
-                  style={{ marginLeft: "4px" }}
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => setEditingTopicId(null)}
-                  style={{ marginLeft: "4px" }}
-                >
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <span
-                style={{ cursor: "pointer", color: "blue" }}
-                onClick={() => navigate(`/forum/${topic.id}`)}
-              >
-                {topic.title}
-              </span>
-            )}
+        <Stack spacing={2}>
+          {displayedTopics.map((topic) => {
+            const isOwner = loggedInUserId && topic.user_id === loggedInUserId;
 
-            {/* Owner controls: Delete & Edit */}
-            {loggedInUserId && topic.user_id === loggedInUserId && (
-              <div>
-                <button
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        "Are you sure you want to delete this topic?"
-                      )
-                    ) {
-                      handleDeleteTopic(topic.id);
-                    }
-                  }}
-                >
-                  Delete
-                </button>
-                {editingTopicId !== topic.id && (
-                  <button
-                    onClick={() => {
-                      setEditingTopicId(topic.id);
-                      setEditingTitle(topic.title);
-                    }}
-                    style={{ marginLeft: "4px" }}
-                  >
-                    Edit
-                  </button>
+            return (
+              <Card key={topic.id}>
+                <CardContent>
+                  {editingTopicId === topic.id ? (
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <TextField
+                        size="small"
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        fullWidth
+                      />
+                      <IconButton
+                        onClick={() =>
+                          setConfirm({
+                            open: true,
+                            message: "Save changes to this topic?",
+                            onConfirm: () => handleEditTopic(topic.id),
+                          })
+                        }
+                        aria-label="save"
+                      >
+                        <SaveIcon />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => setEditingTopicId(null)}
+                        aria-label="cancel"
+                      >
+                        <CloseIcon />
+                      </IconButton>
+                    </Stack>
+                  ) : (
+                    <Typography
+                      variant="h6"
+                      sx={{ cursor: "pointer" }}
+                      onClick={() => navigate(`/forum/${topic.id}`)}
+                    >
+                      {topic.title}
+                    </Typography>
+                  )}
+                </CardContent>
+
+                {isOwner && editingTopicId !== topic.id && (
+                  <CardActions>
+                    <Button
+                      startIcon={<EditIcon />}
+                      onClick={() => {
+                        setEditingTopicId(topic.id);
+                        setEditingTitle(topic.title);
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={() =>
+                        setConfirm({
+                          open: true,
+                          message:
+                            "Are you sure you want to delete this topic?",
+                          onConfirm: () => handleDeleteTopic(topic.id),
+                        })
+                      }
+                    >
+                      Delete
+                    </Button>
+                  </CardActions>
                 )}
-              </div>
-            )}
-          </div>
-        ))
+              </Card>
+            );
+          })}
+        </Stack>
       )}
-    </div>
+
+      <ConfirmDialog
+        open={confirm.open}
+        title="Confirm"
+        message={confirm.message}
+        onConfirm={confirm.onConfirm}
+        onClose={() => setConfirm((c) => ({ ...c, open: false }))}
+      />
+    </PageContainer>
   );
 };
 

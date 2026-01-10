@@ -1,18 +1,25 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { AppBar, Toolbar, Typography, Button, Box, Link } from "@mui/material";
+import ConfirmDialog from "./ConfirmDialog";
 
 const Navbar: React.FC = () => {
   const [loggedIn, setLoggedIn] = useState<boolean>(
     !!localStorage.getItem("token")
   );
-  const [username, setUsername] = useState<string | null>(
-    localStorage.getItem("user")
-      ? JSON.parse(localStorage.getItem("user")!).username
-      : null
-  );
+
+  const [username, setUsername] = useState<string | null>(() => {
+    const userRaw = localStorage.getItem("user");
+    try {
+      return userRaw ? JSON.parse(userRaw).username : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Listen to login/logout events so navbar updates automatically
   useEffect(() => {
     const handleLoginEvent = () => {
       setLoggedIn(true);
@@ -39,50 +46,55 @@ const Navbar: React.FC = () => {
     setLoggedIn(false);
     setUsername(null);
     navigate("/");
-    window.dispatchEvent(new Event("logout")); // notify other components if needed
+    window.dispatchEvent(new Event("logout"));
   };
 
   return (
-    <nav style={{ textAlign: "center" }}>
-      <h1>
-        Welcome to NUS Lifters Web Forum
-        {loggedIn && username ? `, ${username}!` : "!"}
-      </h1>
-      <Link to="/">Home</Link>
-      {" | "}
-      {!loggedIn ? (
-        <>
-          <Link to="/login">Login</Link>
-          {" | "}
-          <Link to="/register">Register</Link>
-        </>
-      ) : (
-        <button
-          onClick={() => {
-            if (window.confirm("Are you sure you want to logout?")) {
-              handleLogout();
-            }
-          }}
-          style={{
-            cursor: "pointer",
-            background: "none",
-            border: "none",
-            padding: 0,
-            color: "blue",
-            textDecoration: "underline",
-            font: "inherit",
-          }}
-        >
-          Logout
-        </button>
-      )}
-      <p style={{ fontSize: "small" }}>
-        {" "}
-        {!loggedIn
-          ? "Log in/Register new account to create posts or comments"
-          : ""}
-      </p>
-    </nav>
+    <>
+      <AppBar position="sticky">
+        <Toolbar sx={{ gap: 1 }}>
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Typography variant="h6" noWrap>
+              NUS Lifters Web Forum
+              {loggedIn && username ? ` — ${username}` : ""}
+            </Typography>
+            {!loggedIn && (
+              <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                Log in / Register to create posts or comments
+              </Typography>
+            )}
+          </Box>
+
+          <Button color="inherit" component={RouterLink} to="/forum">
+            Forum
+          </Button>
+
+          {!loggedIn ? (
+            <>
+              <Button color="inherit" component={RouterLink} to="/login">
+                Login
+              </Button>
+              <Button color="inherit" component={RouterLink} to="/register">
+                Register
+              </Button>
+            </>
+          ) : (
+            <Button color="inherit" onClick={() => setConfirmLogoutOpen(true)}>
+              Logout
+            </Button>
+          )}
+        </Toolbar>
+      </AppBar>
+
+      <ConfirmDialog
+        open={confirmLogoutOpen}
+        title="Logout"
+        message="Are you sure you want to logout?"
+        confirmText="Logout"
+        onConfirm={handleLogout}
+        onClose={() => setConfirmLogoutOpen(false)}
+      />
+    </>
   );
 };
 

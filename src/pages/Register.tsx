@@ -1,22 +1,18 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Box, Button, Paper, TextField, Typography } from "@mui/material";
 import API from "../services/api";
+import PageContainer from "../components/PageContainer";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 const Register: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-      if (
-        !window.confirm("Are you sure you want to register with this account?")
-      ) {
-        return;
-      }
-
+  const doRegister = async () => {
     try {
       await API.post("/register", { username, password });
       alert("Registered successfully! Please login with your new account!");
@@ -26,24 +22,52 @@ const Register: React.FC = () => {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setConfirmOpen(true);
+  };
+
   return (
-    <form onSubmit={handleSubmit} style={{ textAlign: "center" }}>
-      <input
-        style={{ marginRight: 20 }}
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        placeholder="Username"
+    <PageContainer maxWidth="sm">
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="h5" sx={{ mb: 2 }}>
+          Register
+        </Typography>
+
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+        >
+          <TextField
+            label="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoComplete="username"
+          />
+          <TextField
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+          />
+
+          <Button type="submit" variant="contained">
+            Register
+          </Button>
+        </Box>
+      </Paper>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Register"
+        message="Are you sure you want to register with this account?"
+        confirmText="Register"
+        onConfirm={doRegister}
+        onClose={() => setConfirmOpen(false)}
       />
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Password"
-      />
-      <button type="submit" style={{ marginLeft: 10 }}>
-        Register
-      </button>
-    </form>
+    </PageContainer>
   );
 };
 

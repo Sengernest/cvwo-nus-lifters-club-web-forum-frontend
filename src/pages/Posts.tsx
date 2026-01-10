@@ -3,6 +3,35 @@ import { useParams } from "react-router-dom";
 import API from "../services/api";
 import { Post, Comment, Topic } from "../services/types";
 
+import {
+  Box,
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Divider,
+  IconButton,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+
+import AddIcon from "@mui/icons-material/Add";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import SaveIcon from "@mui/icons-material/Save";
+import CloseIcon from "@mui/icons-material/Close";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+
+import PageContainer from "../components/PageContainer";
+import ConfirmDialog from "../components/ConfirmDialog";
+
 const Posts: React.FC = () => {
   const { topicId } = useParams();
 
@@ -31,6 +60,13 @@ const Posts: React.FC = () => {
   const [commentSortOption, setCommentSortOption] = useState<
     "recent" | "liked"
   >("recent");
+
+  const [confirm, setConfirm] = useState<{
+    open: boolean;
+    title?: string;
+    message: string;
+    onConfirm: () => void;
+  }>({ open: false, message: "", onConfirm: () => {} });
 
   const token = localStorage.getItem("token");
   const loggedInUser = token
@@ -71,9 +107,13 @@ const Posts: React.FC = () => {
     if (expandedPostId === postId) {
       setExpandedPostId(null);
       setComments([]);
+      setShowAddCommentInput(false);
+      setNewComment("");
     } else {
       setExpandedPostId(postId);
       fetchComments(postId);
+      setShowAddCommentInput(false);
+      setNewComment("");
     }
   };
 
@@ -227,440 +267,519 @@ const Posts: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: "16px", maxWidth: "900px", margin: "0 auto" }}>
+    <PageContainer maxWidth="md">
       {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          marginBottom: "16px",
-          gap: "8px",
-        }}
-      >
-        <h2 style={{ margin: 0 }}>
-          Showing Posts {topic && `from Topic: ${topic.title}`}
-        </h2>
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="🔍 Search posts"
-          style={{ padding: "4px 8px", marginTop: "5px", width: "110px" }}
-        />
-        <select
-          value={postSortOption}
-          onChange={(e) =>
-            setPostSortOption(
-              e.target.value as "alphabetic" | "recent" | "liked"
-            )
-          }
-          style={{ padding: "4px 8px", marginTop: "5px" }}
-        >
-          <option value="alphabetic">Alphabetical</option>
-          <option value="recent">Most Recent</option>
-          <option value="liked">Most Liked</option>
-        </select>
-        {loggedInUserId && !showAddPostInput && (
-          <button
-            onClick={() => setShowAddPostInput(true)}
-            style={{ fontSize: "20px", padding: "0px 8px", marginTop: "5px" }}
-            title="Add New Post"
+      <Stack spacing={1} sx={{ mb: 2 }}>
+        <Typography variant="h5">
+          Posts {topic ? `— ${topic.title}` : ""}
+        </Typography>
+
+        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+          <TextField
+            size="small"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search posts"
+          />
+
+          <Select
+            size="small"
+            value={postSortOption}
+            onChange={(e) =>
+              setPostSortOption(
+                e.target.value as "alphabetic" | "recent" | "liked"
+              )
+            }
           >
-            +
-          </button>
-        )}
-      </div>
+            <MenuItem value="alphabetic">Alphabetical</MenuItem>
+            <MenuItem value="recent">Most Recent</MenuItem>
+            <MenuItem value="liked">Most Liked</MenuItem>
+          </Select>
+
+          {loggedInUserId && !showAddPostInput && (
+            <IconButton
+              onClick={() => setShowAddPostInput(true)}
+              aria-label="add post"
+            >
+              <AddIcon />
+            </IconButton>
+          )}
+        </Stack>
+      </Stack>
 
       {/* Add post */}
       {showAddPostInput && loggedInUserId && (
-        <div style={{ marginBottom: "16px" }}>
-          <input
-            type="text"
-            value={newTitle}
-            placeholder="Enter Post title"
-            onChange={(e) => setNewTitle(e.target.value)}
-            style={{ width: "100%", marginBottom: "4px" }}
-          />
-          <textarea
-            value={newContent}
-            placeholder="Enter Post Content"
-            onChange={(e) => setNewContent(e.target.value)}
-            style={{ width: "100%", minHeight: "60px" }}
-          />
-          <button
-            onClick={() => {
-              if (window.confirm("Add this new post?")) {
-                handleAddPost();
-              }
-            }}
-            style={{ marginRight: "4px" }}
-          >
-            Add New Post
-          </button>
-          <button
-            onClick={() => {
-              setShowAddPostInput(false);
-              setNewTitle("");
-              setNewContent("");
-            }}
-          >
-            Cancel
-          </button>
-        </div>
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <Stack spacing={2}>
+              <TextField
+                label="Post title"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                fullWidth
+              />
+              <TextField
+                label="Post content"
+                value={newContent}
+                onChange={(e) => setNewContent(e.target.value)}
+                fullWidth
+                multiline
+                minRows={3}
+              />
+              <Stack direction="row" spacing={1}>
+                <Button
+                  variant="contained"
+                  onClick={() =>
+                    setConfirm({
+                      open: true,
+                      title: "Add Post",
+                      message: "Add this new post?",
+                      onConfirm: handleAddPost,
+                    })
+                  }
+                >
+                  Add Post
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setShowAddPostInput(false);
+                    setNewTitle("");
+                    setNewContent("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
       )}
 
       {/* Posts list */}
       {loading ? (
-        <p>Loading posts...</p>
+        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+          <CircularProgress />
+        </Box>
       ) : displayedPosts.length === 0 ? (
-        <p>No posts yet.</p>
+        <Typography>No posts yet.</Typography>
       ) : (
-        displayedPosts.map((post) => (
-          <div
-            key={post.id}
-            style={{
-              border: "1px solid #ccc",
-              padding: "12px",
-              marginBottom: "12px",
-              width: "100%",
-              boxSizing: "border-box",
-              overflowWrap: "break-word",
-              wordBreak: "break-word",
-              whiteSpace: "normal",
-            }}
-          >
-            {editingPostId === post.id ? (
-              <>
-                <input
-                  type="text"
-                  value={editingTitle}
-                  onChange={(e) => setEditingTitle(e.target.value)}
-                  style={{ width: "100%", marginBottom: "4px" }}
-                />
-                <textarea
-                  value={editingContent}
-                  onChange={(e) => setEditingContent(e.target.value)}
-                  style={{ width: "100%", minHeight: "60px" }}
-                />
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <button
-                    onClick={() => {
-                      if (window.confirm("Save changes to this post?")) {
-                        handleEditPost(post.id);
-                      }
-                    }}
-                  >
-                    Save
-                  </button>
-                  <button onClick={() => setEditingPostId(null)}>Cancel</button>
-                </div>
-              </>
-            ) : (
-              <>
-                <h4 style={{ margin: "0 0 8px 0" }}>{post.title}</h4>
-                <p
-                  style={{
-                    margin: 0,
-                    whiteSpace: "pre-wrap",
-                    overflowWrap: "break-word",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {post.content}
-                </p>
+        <Stack spacing={2}>
+          {displayedPosts.map((post) => {
+            const isOwner = loggedInUserId === post.user_id;
+            const isExpanded = expandedPostId === post.id;
 
-                {/* By / Date / Delete/Edit */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginTop: "4px",
-                  }}
-                >
-                  <div style={{ color: "gray", fontSize: "14px" }}>
-                    By{" "}
-                    {loggedInUserId === post.user_id
-                      ? "You"
-                      : post.username || "Unknown"}{" "}
-                    • {timeAgo(post.created_at)}
-                  </div>
-                  {loggedInUserId === post.user_id && (
-                    <div>
-                      <button
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              "Are you sure you want to delete this post?"
-                            )
-                          ) {
-                            handleDeletePost(post.id);
+            return (
+              <Card key={post.id}>
+                <CardContent>
+                  {editingPostId === post.id ? (
+                    <Stack spacing={2}>
+                      <TextField
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        label="Edit title"
+                        fullWidth
+                      />
+                      <TextField
+                        value={editingContent}
+                        onChange={(e) => setEditingContent(e.target.value)}
+                        label="Edit content"
+                        fullWidth
+                        multiline
+                        minRows={3}
+                      />
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          startIcon={<SaveIcon />}
+                          variant="contained"
+                          onClick={() =>
+                            setConfirm({
+                              open: true,
+                              title: "Save Post",
+                              message: "Save changes to this post?",
+                              onConfirm: () => handleEditPost(post.id),
+                            })
                           }
-                        }}
-                        style={{ marginRight: "4px", fontSize: "12px" }}
-                      >
-                        Delete
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditingPostId(post.id);
-                          setEditingTitle(post.title);
-                          setEditingContent(post.content);
-                        }}
-                        style={{ fontSize: "12px" }}
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Like + View Comments */}
-                <div style={{ marginTop: "8px", gap: "12px" }}>
-                  <button
-                    onClick={() => handleToggleLikePost(post)}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: post.likedByUser ? "red" : "gray",
-                    }}
-                  >
-                    ❤️ {post.likes || 0}
-                  </button>
-                  <button
-                    onClick={() => toggleExpandPost(post.id)}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "blue",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {expandedPostId === post.id
-                      ? "Hide Comments ▲"
-                      : "View Comments ▼"}
-                  </button>
-                </div>
-
-                {/* Comments Section */}
-                {expandedPostId === post.id && (
-                  <div style={{ marginTop: "16px" }}>
-                    <h4
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      <span>Comments:</span>
-                      <select
-                        value={commentSortOption}
-                        onChange={(e) =>
-                          setCommentSortOption(
-                            e.target.value as "recent" | "liked"
-                          )
-                        }
-                        style={{
-                          padding: "2px 6px",
-                          fontSize: "12px",
-                          marginTop: "3px",
-                        }}
-                      >
-                        <option value="recent">Most Recent</option>
-                        <option value="liked">Most Liked</option>
-                      </select>
-                      {loggedInUserId && !showAddCommentInput && (
-                        <button
-                          onClick={() => setShowAddCommentInput(true)}
-                          style={{
-                            fontSize: "15px",
-                            padding: "0 6px",
-                            marginTop: "3px",
-                          }}
-                          title="Add Comment"
                         >
-                          +
-                        </button>
-                      )}
-                    </h4>
-
-                    {showAddCommentInput && (
-                      <div style={{ marginBottom: "16px" }}>
-                        <textarea
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                          placeholder="Enter Comment Content"
-                          style={{ width: "100%", minHeight: "50px" }}
-                        />
-                        <button
-                          onClick={() => {
-                            if (window.confirm("Add this new comment?")) {
-                              handleAddComment(post.id);
-                              setShowAddCommentInput(false);
-                            }
-                          }}
-                          style={{ marginRight: "4px" }}
-                        >
-                          Add New Comment
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowAddCommentInput(false);
-                            setNewComment("");
-                          }}
+                          Save
+                        </Button>
+                        <Button
+                          startIcon={<CloseIcon />}
+                          variant="outlined"
+                          onClick={() => setEditingPostId(null)}
                         >
                           Cancel
-                        </button>
-                      </div>
+                        </Button>
+                      </Stack>
+                    </Stack>
+                  ) : (
+                    <>
+                      {/* Title row with top-right actions */}
+                      <Stack
+                        direction="row"
+                        alignItems="flex-start"
+                        justifyContent="space-between"
+                        sx={{ mb: 1, gap: 1 }}
+                      >
+                        <Typography
+                          variant="h6"
+                          sx={{ wordBreak: "break-word", flex: 1 }}
+                        >
+                          {post.title}
+                        </Typography>
+
+                        {isOwner && (
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{ flexShrink: 0 }}
+                          >
+                            <Button
+                              size="small"
+                              startIcon={<EditIcon />}
+                              onClick={() => {
+                                setEditingPostId(post.id);
+                                setEditingTitle(post.title);
+                                setEditingContent(post.content);
+                              }}
+                            >
+                              Edit
+                            </Button>
+
+                            <Button
+                              size="small"
+                              color="error"
+                              startIcon={<DeleteIcon />}
+                              onClick={() =>
+                                setConfirm({
+                                  open: true,
+                                  title: "Delete Post",
+                                  message:
+                                    "Are you sure you want to delete this post?",
+                                  onConfirm: () => handleDeletePost(post.id),
+                                })
+                              }
+                            >
+                              Delete
+                            </Button>
+                          </Stack>
+                        )}
+                      </Stack>
+
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          whiteSpace: "pre-wrap",
+                          overflowWrap: "break-word",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {post.content}
+                      </Typography>
+
+                      {/* Meta line */}
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ mt: 1, display: "block" }}
+                      >
+                        By {isOwner ? "You" : post.username || "Unknown"} •{" "}
+                        {timeAgo(post.created_at)}
+                      </Typography>
+                    </>
+                  )}
+                </CardContent>
+
+                {/* Like + toggle comments */}
+                {editingPostId !== post.id && (
+                  <>
+                    <Divider />
+                    <CardActions sx={{ justifyContent: "space-between" }}>
+                      <Button
+                        startIcon={<FavoriteIcon />}
+                        onClick={() => handleToggleLikePost(post)}
+                        sx={{
+                          color: post.likedByUser
+                            ? "error.main"
+                            : "text.secondary",
+                        }}
+                      >
+                        {post.likes || 0}
+                      </Button>
+
+                      <Button
+                        endIcon={
+                          isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />
+                        }
+                        onClick={() => toggleExpandPost(post.id)}
+                      >
+                        {isExpanded ? "Hide Comments" : "View Comments"}
+                      </Button>
+                    </CardActions>
+                  </>
+                )}
+
+                {/* Comments */}
+                {isExpanded && editingPostId !== post.id && (
+                  <Box sx={{ px: 2, pb: 2 }}>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      justifyContent="space-between"
+                      sx={{ mt: 1, mb: 1 }}
+                    >
+                      <Typography variant="subtitle1">Comments</Typography>
+
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Select
+                          size="small"
+                          value={commentSortOption}
+                          onChange={(e) =>
+                            setCommentSortOption(
+                              e.target.value as "recent" | "liked"
+                            )
+                          }
+                        >
+                          <MenuItem value="recent">Most Recent</MenuItem>
+                          <MenuItem value="liked">Most Liked</MenuItem>
+                        </Select>
+
+                        {loggedInUserId && !showAddCommentInput && (
+                          <IconButton
+                            onClick={() => setShowAddCommentInput(true)}
+                            aria-label="add comment"
+                          >
+                            <AddIcon />
+                          </IconButton>
+                        )}
+                      </Stack>
+                    </Stack>
+
+                    {showAddCommentInput && (
+                      <Card variant="outlined" sx={{ mb: 2 }}>
+                        <CardContent>
+                          <Stack spacing={2}>
+                            <TextField
+                              label="New comment"
+                              value={newComment}
+                              onChange={(e) => setNewComment(e.target.value)}
+                              fullWidth
+                              multiline
+                              minRows={2}
+                            />
+                            <Stack direction="row" spacing={1}>
+                              <Button
+                                variant="contained"
+                                onClick={() =>
+                                  setConfirm({
+                                    open: true,
+                                    title: "Add Comment",
+                                    message: "Add this new comment?",
+                                    onConfirm: () => {
+                                      handleAddComment(post.id);
+                                      setShowAddCommentInput(false);
+                                    },
+                                  })
+                                }
+                              >
+                                Add Comment
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                onClick={() => {
+                                  setShowAddCommentInput(false);
+                                  setNewComment("");
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </Stack>
+                          </Stack>
+                        </CardContent>
+                      </Card>
                     )}
 
                     {comments.length === 0 ? (
-                      <p>No comments yet.</p>
+                      <Typography variant="body2">No comments yet.</Typography>
                     ) : (
-                      comments
-                        .slice()
-                        .sort((a, b) =>
-                          commentSortOption === "liked"
-                            ? (b.likes || 0) - (a.likes || 0)
-                            : new Date(b.created_at).getTime() -
-                              new Date(a.created_at).getTime()
-                        )
-                        .map((comment) => (
-                          <div
-                            key={comment.id}
-                            style={{
-                              border: "1px solid #0c20d6ff",
-                              padding: "10px",
-                              marginTop: "8px",
-                              width: "100%",
-                              boxSizing: "border-box",
-                              overflowWrap: "break-word",
-                              wordBreak: "break-word",
-                              whiteSpace: "normal",
-                            }}
-                          >
-                            {editingCommentId === comment.id ? (
-                              <>
-                                <textarea
-                                  value={editingCommentContent}
-                                  onChange={(e) =>
-                                    setEditingCommentContent(e.target.value)
-                                  }
-                                  style={{ width: "100%", minHeight: "40px" }}
-                                />
-                                <div style={{ display: "flex", gap: "8px" }}>
-                                  <button
-                                    onClick={() => {
-                                      if (
-                                        window.confirm(
-                                          "Save changes to this comment?"
-                                        )
-                                      ) {
-                                        handleEditComment(comment.id);
-                                      }
-                                    }}
-                                  >
-                                    Save
-                                  </button>
-                                  <button
-                                    onClick={() => setEditingCommentId(null)}
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <p
-                                  style={{
-                                    margin: 0,
-                                    whiteSpace: "pre-wrap",
-                                    overflowWrap: "break-word",
-                                    wordBreak: "break-word",
-                                  }}
-                                >
-                                  {comment.content}
-                                </p>
+                      <Stack spacing={1}>
+                        {comments
+                          .slice()
+                          .sort((a, b) =>
+                            commentSortOption === "liked"
+                              ? (b.likes || 0) - (a.likes || 0)
+                              : new Date(b.created_at).getTime() -
+                                new Date(a.created_at).getTime()
+                          )
+                          .map((comment) => {
+                            const isCommentOwner =
+                              loggedInUserId === comment.user_id;
 
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    marginTop: "4px",
-                                  }}
-                                >
-                                  <div
-                                    style={{ color: "gray", fontSize: "12px" }}
-                                  >
-                                    By{" "}
-                                    {loggedInUserId === comment.user_id
-                                      ? "You"
-                                      : comment.username || "Unknown"}{" "}
-                                    • {timeAgo(comment.created_at)}
-                                  </div>
-                                  {loggedInUserId === comment.user_id && (
-                                    <div>
-                                      <button
-                                        onClick={() => {
-                                          if (
-                                            window.confirm(
-                                              "Are you sure you want to delete this comment?"
-                                            )
-                                          ) {
-                                            handleDeleteComment(comment.id);
-                                          }
-                                        }}
-                                        style={{
-                                          marginRight: "4px",
-                                          fontSize: "12px",
-                                        }}
-                                      >
-                                        Delete
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          setEditingCommentId(comment.id);
+                            return (
+                              <Card key={comment.id} variant="outlined">
+                                <CardContent>
+                                  {editingCommentId === comment.id ? (
+                                    <Stack spacing={2}>
+                                      <TextField
+                                        value={editingCommentContent}
+                                        onChange={(e) =>
                                           setEditingCommentContent(
-                                            comment.content
-                                          );
+                                            e.target.value
+                                          )
+                                        }
+                                        label="Edit comment"
+                                        fullWidth
+                                        multiline
+                                        minRows={2}
+                                      />
+                                      <Stack direction="row" spacing={1}>
+                                        <Button
+                                          variant="contained"
+                                          startIcon={<SaveIcon />}
+                                          onClick={() =>
+                                            setConfirm({
+                                              open: true,
+                                              title: "Save Comment",
+                                              message:
+                                                "Save changes to this comment?",
+                                              onConfirm: () =>
+                                                handleEditComment(comment.id),
+                                            })
+                                          }
+                                        >
+                                          Save
+                                        </Button>
+                                        <Button
+                                          variant="outlined"
+                                          startIcon={<CloseIcon />}
+                                          onClick={() =>
+                                            setEditingCommentId(null)
+                                          }
+                                        >
+                                          Cancel
+                                        </Button>
+                                      </Stack>
+                                    </Stack>
+                                  ) : (
+                                    <>
+                                      <Typography
+                                        variant="body2"
+                                        sx={{
+                                          whiteSpace: "pre-wrap",
+                                          overflowWrap: "break-word",
+                                          wordBreak: "break-word",
                                         }}
-                                        style={{ fontSize: "12px" }}
                                       >
-                                        Edit
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
+                                        {comment.content}
+                                      </Typography>
 
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleToggleLikeComment(comment)
-                                  }
-                                  style={{
-                                    background: "none",
-                                    border: "none",
-                                    color: comment.likedByUser ? "red" : "gray",
-                                    marginTop: "4px",
-                                  }}
-                                >
-                                  ❤️ {comment.likes || 0}
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        ))
+                                      <Stack
+                                        direction="row"
+                                        justifyContent="space-between"
+                                        alignItems="center"
+                                        sx={{ mt: 1 }}
+                                      >
+                                        <Typography
+                                          variant="caption"
+                                          color="text.secondary"
+                                        >
+                                          By{" "}
+                                          {isCommentOwner
+                                            ? "You"
+                                            : comment.username ||
+                                              "Unknown"}{" "}
+                                          • {timeAgo(comment.created_at)}
+                                        </Typography>
+
+                                        {isCommentOwner && (
+                                          <Stack direction="row" spacing={1}>
+                                            <Button
+                                              size="small"
+                                              startIcon={<EditIcon />}
+                                              onClick={() => {
+                                                setEditingCommentId(comment.id);
+                                                setEditingCommentContent(
+                                                  comment.content
+                                                );
+                                              }}
+                                            >
+                                              Edit
+                                            </Button>
+                                            <Button
+                                              size="small"
+                                              color="error"
+                                              startIcon={<DeleteIcon />}
+                                              onClick={() =>
+                                                setConfirm({
+                                                  open: true,
+                                                  title: "Delete Comment",
+                                                  message:
+                                                    "Are you sure you want to delete this comment?",
+                                                  onConfirm: () =>
+                                                    handleDeleteComment(
+                                                      comment.id
+                                                    ),
+                                                })
+                                              }
+                                            >
+                                              Delete
+                                            </Button>
+                                          </Stack>
+                                        )}
+                                      </Stack>
+                                    </>
+                                  )}
+                                </CardContent>
+
+                                {editingCommentId !== comment.id && (
+                                  <CardActions
+                                    sx={{ justifyContent: "space-between" }}
+                                  >
+                                    <Button
+                                      startIcon={<FavoriteIcon />}
+                                      onClick={() =>
+                                        handleToggleLikeComment(comment)
+                                      }
+                                      sx={{
+                                        color: comment.likedByUser
+                                          ? "error.main"
+                                          : "text.secondary",
+                                      }}
+                                    >
+                                      {comment.likes || 0}
+                                    </Button>
+
+                                    {comment.likedByUser && (
+                                      <Chip
+                                        size="small"
+                                        label="Liked"
+                                        color="error"
+                                        variant="outlined"
+                                      />
+                                    )}
+                                  </CardActions>
+                                )}
+                              </Card>
+                            );
+                          })}
+                      </Stack>
                     )}
-                  </div>
+                  </Box>
                 )}
-              </>
-            )}
-          </div>
-        ))
+              </Card>
+            );
+          })}
+        </Stack>
       )}
-    </div>
+
+      <ConfirmDialog
+        open={confirm.open}
+        title={confirm.title || "Confirm"}
+        message={confirm.message}
+        onConfirm={confirm.onConfirm}
+        onClose={() => setConfirm((c) => ({ ...c, open: false }))}
+      />
+    </PageContainer>
   );
 };
 
