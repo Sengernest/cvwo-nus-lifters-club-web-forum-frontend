@@ -1,4 +1,6 @@
 # NUS Lifters
+<img width="956" height="557" alt="image" src="https://github.com/user-attachments/assets/432accf0-5f04-4cdb-978e-8104c7da7c6b" />
+
 A full-stack web forum application that allows users to register accounts, create fitness and gym-related topics, posts and comments as well as interact through likes. 
 
 > **Tech Stack:** React + Vite • TypeScript • Material UI • Axios • Go • SQLite
